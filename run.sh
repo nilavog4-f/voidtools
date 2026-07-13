@@ -1,198 +1,274 @@
 #!/usr/bin/env bash
 # ##############################################################
-# ##                                                          ##
 # ##   VOID OSINT  —  WSL / Kali Linux Edition               ##
-# ##   ** Main Launcher / Tool Menu **                        ##
-# ##                                                          ##
-# ##   Usage  :  bash run.sh                                  ##
-# ##   Requires:  Python 3.8+, pip3                           ##
-# ##   Author  :  @lfw.k4rma_                                 ##
-# ##                                                          ##
+# ##   Main Launcher                                          ##
+# ##   Author : @lfw.k4rma_                                  ##
 # ##############################################################
 
-# ── Always run from the script's own directory ────────────────
-cd "$(dirname "$(realpath "$0")")" 2>/dev/null \
-  || cd "$(dirname "$0")"
+cd "$(dirname "$(realpath "$0")")" 2>/dev/null || cd "$(dirname "$0")"
 
-# ── Color Palette ─────────────────────────────────────────────
-R='\033[0;31m'   LR='\033[1;31m'
-Y='\033[0;33m'   LY='\033[1;33m'
-C='\033[0;36m'   LC='\033[1;36m'
-G='\033[0;32m'   LG='\033[1;32m'
-M='\033[0;35m'   LM='\033[1;35m'
-W='\033[1;37m'   DIM='\033[2m'   RST='\033[0m'
+# ── Palette ───────────────────────────────────────────────────
+BLK='\033[0;30m'   BBLK='\033[1;30m'
+R='\033[0;31m'     LR='\033[1;31m'
+G='\033[0;32m'     LG='\033[1;32m'
+Y='\033[0;33m'     LY='\033[1;33m'
+B='\033[0;34m'     LB='\033[1;34m'
+M='\033[0;35m'     LM='\033[1;35m'
+C='\033[0;36m'     LC='\033[1;36m'
+W='\033[0;37m'     LW='\033[1;37m'
+DIM='\033[2m'      RST='\033[0m'
+BOLD='\033[1m'
+# 256-color extras
+ORANGE='\033[38;5;208m'
+BLOOD='\033[38;5;160m'
+CRIMSON='\033[38;5;196m'
+ROSE='\033[38;5;197m'
+GRAY='\033[38;5;240m'
+LGRAY='\033[38;5;246m'
 
-OK="${LG}[✔]${RST}"
-ERR="${LR}[✘]${RST}"
-INF="${LC}[◈]${RST}"
-WARN="${LY}[!]${RST}"
-RUN="${LM}[➜]${RST}"
+OK="${LG}✔${RST}"
+ERR="${LR}✘${RST}"
+INF="${LC}◈${RST}"
+WARN="${LY}!${RST}"
+ARR="${LR}▶${RST}"
+DOT="${BLOOD}•${RST}"
 
 # ── Helpers ───────────────────────────────────────────────────
+COLS() { tput cols 2>/dev/null || echo 80; }
+
 rule() {
-  local char="${1:-─}" color="${2:-$DIM}"
-  printf "${color}"
-  printf '%*s' "$(tput cols 2>/dev/null || echo 72)" '' | tr ' ' "$char"
-  printf "${RST}\n"
+  local char="${1:-─}" color="${2:-$BBLK}"
+  local w; w=$(COLS)
+  printf "${color}"; printf '%*s' "$w" '' | tr ' ' "$char"; printf "${RST}\n"
 }
 
 center() {
   local text="$1"
-  local plain; plain=$(echo -e "$text" | sed 's/\x1B\[[0-9;]*m//g')
-  local width len pad
-  width=$(tput cols 2>/dev/null || echo 72)
-  len=${#plain}; pad=$(( (width - len) / 2 ))
-  printf "%${pad}s" ""; echo -e "$text"
+  local plain; plain=$(printf '%b' "$text" | sed 's/\x1B\[[0-9;:]*[mK]//g')
+  local w pad; w=$(COLS); pad=$(( (w - ${#plain}) / 2 ))
+  [ $pad -lt 0 ] && pad=0
+  printf "%${pad}s" ""; printf '%b\n' "$text"
+}
+
+pad_line() {
+  # pad_line LEFT_COLOR "text" RIGHT_COLOR "text"
+  local w; w=$(COLS)
+  local plain1; plain1=$(printf '%b' "$2" | sed 's/\x1B\[[0-9;:]*[mK]//g')
+  local plain2; plain2=$(printf '%b' "$4" | sed 's/\x1B\[[0-9;:]*[mK]//g')
+  local space=$(( w - ${#plain1} - ${#plain2} - 4 ))
+  [ $space -lt 1 ] && space=1
+  printf "  %b%b%${space}s%b%b  \n" "$1" "$2" "" "$3" "$4"
 }
 
 spin() {
   local label="$1"; shift
-  local frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+  local frames=('⣾' '⣽' '⣻' '⢿' '⡿' '⣟' '⣯' '⣷')
   "$@" &>/tmp/_void_out & local pid=$! i=0
   while kill -0 "$pid" 2>/dev/null; do
-    printf "\r  ${LY}${frames[$i]}${RST}  ${DIM}%s${RST}   " "$label"
-    i=$(( (i + 1) % ${#frames[@]} )); sleep 0.08
+    printf "\r  ${BLOOD}${frames[$i]}${RST}  ${LGRAY}%s${RST}   " "$label"
+    i=$(( (i + 1) % ${#frames[@]} )); sleep 0.07
   done
   wait "$pid"; local rc=$?; printf "\r\033[2K"; return $rc
 }
 
 # ── Banner ────────────────────────────────────────────────────
 show_banner() {
-  clear; echo ""
-  rule "═" "$LC"
+  clear
   echo ""
-  echo -e "${LC}"
+  rule "═" "$BLOOD"
+  echo ""
+
+  # ASCII art — bright red
+  printf '%b' "${CRIMSON}${BOLD}"
   center "██╗   ██╗ ██████╗ ██╗██████╗      ██████╗ ███████╗██╗███╗   ██╗████████╗"
   center "██║   ██║██╔═══██╗██║██╔══██╗    ██╔═══██╗██╔════╝██║████╗  ██║╚══██╔══╝"
   center "██║   ██║██║   ██║██║██║  ██║    ██║   ██║███████╗██║██╔██╗ ██║   ██║   "
   center "╚██╗ ██╔╝██║   ██║██║██║  ██║    ██║   ██║╚════██║██║██║╚██╗██║   ██║   "
   center " ╚████╔╝ ╚██████╔╝██║██████╔╝    ╚██████╔╝███████║██║██║ ╚████║   ██║   "
   center "  ╚═══╝   ╚═════╝ ╚═╝╚═════╝      ╚═════╝ ╚══════╝╚═╝╚═╝  ╚═══╝   ╚═╝  "
-  echo -e "${RST}"
-  center "${DIM}OSINT Toolkit  •  WSL / Kali Linux Edition  •  @lfw.k4rma_${RST}"
+  printf '%b' "${RST}"
+
   echo ""
-  rule "═" "$LC"
+  center "${BLOOD}─────────────────────────────────────────────────────────────────${RST}"
+  center "${LGRAY}O P E N   S O U R C E   I N T E L L I G E N C E   T O O L K I T${RST}"
+  center "${BLOOD}─────────────────────────────────────────────────────────────────${RST}"
+  echo ""
+  pad_line "${GRAY}" "WSL / Kali Linux Edition" "${BLOOD}" "@lfw.k4rma_"
+  echo ""
+  rule "═" "$BLOOD"
   echo ""
 }
 
-# ── Environment + dep check (runs once on startup) ────────────
+# ── Startup checks ────────────────────────────────────────────
 startup_checks() {
-  echo -e "  ${W}ENVIRONMENT${RST}\n"
+  echo -e "  ${BOLD}${LW}ENVIRONMENT${RST}\n"
 
   if grep -qi microsoft /proc/version 2>/dev/null; then
-    echo -e "  ${OK}  WSL detected"
+    echo -e "  ${OK}  ${LW}WSL${RST}    ${GRAY}Windows Subsystem for Linux${RST}"
   else
-    echo -e "  ${INF}  Native Linux"
+    echo -e "  ${INF}  ${LW}Native Linux${RST}"
   fi
 
   if grep -qi kali /etc/os-release 2>/dev/null; then
-    echo -e "  ${OK}  Kali Linux"
+    echo -e "  ${OK}  ${LR}Kali Linux${RST}"
   else
     distro=$(. /etc/os-release 2>/dev/null && echo "$NAME" || echo "Unknown")
-    echo -e "  ${WARN}  ${distro}  ${DIM}(not Kali — tool may still work)${RST}"
+    echo -e "  ${WARN}  ${LW}${distro}${RST}  ${GRAY}(not Kali — should still work)${RST}"
   fi
 
   if ! command -v python3 &>/dev/null; then
-    echo -e "  ${ERR}  Python3 not found"
-    echo -e "       ${DIM}sudo apt update && sudo apt install python3 python3-pip -y${RST}"
-    echo ""; exit 1
+    echo -e "\n  ${ERR}  ${LW}Python3 not found${RST}"
+    echo -e "  ${GRAY}Fix:  sudo apt update && sudo apt install python3 python3-pip -y${RST}\n"
+    exit 1
   fi
-  PY_VER=$(python3 --version 2>&1 | awk '{print $2}')
-  echo -e "  ${OK}  Python ${LG}${PY_VER}${RST}"
+  PY=$(python3 --version 2>&1 | awk '{print $2}')
+  echo -e "  ${OK}  ${LW}Python ${LG}${PY}${RST}"
 
   echo ""
-  rule "─" "$DIM"
+  rule "─" "$BBLK"
   echo ""
-  echo -e "  ${W}DEPENDENCIES${RST}\n"
+  echo -e "  ${BOLD}${LW}DEPENDENCIES${RST}\n"
 
   if [ -f requirements.txt ]; then
-    spin "Installing requirements…" \
+    spin "Installing packages from requirements.txt …" \
       pip3 install -r requirements.txt -q --break-system-packages 2>/dev/null \
       || pip3 install -r requirements.txt -q 2>/dev/null
-    echo -e "  ${OK}  Packages ready"
   else
-    spin "Installing core packages…" \
+    spin "Installing core packages …" \
       pip3 install requests rich pyfiglet ddgs phonenumbers beautifulsoup4 flask -q \
            --break-system-packages 2>/dev/null \
       || pip3 install requests rich pyfiglet ddgs phonenumbers beautifulsoup4 flask -q 2>/dev/null
-    echo -e "  ${OK}  Core packages installed"
   fi
 
-  echo ""
-  rule "═" "$LC"
-  echo ""
-}
-
-# ── Tool menu ─────────────────────────────────────────────────
-show_menu() {
-  echo -e "  ${LC}SELECT A TOOL${RST}\n"
-
-  echo -e "  ${LY}[1]${RST}  ${W}Phone Deep Scan${RST}        ${DIM}phone_deep.py   — carrier, breach, OSINT lookup${RST}"
-  echo -e "  ${LY}[2]${RST}  ${W}Phone Intelligence${RST}     ${DIM}phone2.py       — full OSINT + AI phone framework${RST}"
-  echo -e "  ${LY}[3]${RST}  ${W}IP Intelligence${RST}        ${DIM}ip_intel.py     — geo, ASN, VPN/Tor, port scan, DDG${RST}"
-  echo -e "  ${LY}[4]${RST}  ${W}GeoTracker${RST}             ${DIM}geo.py          — Flask lure page, Cloudflare tunnel${RST}"
-  echo -e "  ${LY}[5]${RST}  ${W}Phishing Kit${RST}           ${DIM}phishing.py     — credential capture server${RST}"
-  echo -e "  ${LY}[6]${RST}  ${W}Password Guesser${RST}       ${DIM}password_guesser.py — social-data wordlist builder${RST}"
-  echo -e "  ${LY}[7]${RST}  ${W}VOID-AI Chatbot${RST}        ${DIM}chatbot.py      — OpenRouter AI assistant${RST}"
-  echo ""
-  echo -e "  ${DIM}[Q]  Quit${RST}"
-  echo ""
-  rule "─" "$DIM"
-  echo ""
-}
-
-launch() {
-  local script="$1" label="$2"
-  if [ ! -f "$script" ]; then
-    echo -e "\n  ${ERR}  ${script} not found in $(pwd)\n"
-    return
-  fi
-  echo ""
-  rule "═" "$LY"
-  echo -e "\n  ${RUN}  ${W}Launching ${label}…${RST}\n"
-  rule "═" "$LY"
-  echo ""
-  python3 "$script"
-  local rc=$?
-  echo ""
-  rule "═" "$LC"
-  if [ $rc -eq 0 ]; then
-    center "${LG}** ${label} exited cleanly **${RST}"
+  if [ $? -eq 0 ]; then
+    echo -e "  ${OK}  ${LW}All packages ready${RST}"
   else
-    center "${LR}** ${label} exited with code ${rc} **${RST}"
+    echo -e "  ${WARN}  ${Y}Some packages may have failed — tool auto-installs will handle them${RST}"
   fi
+
   echo ""
-  rule "═" "$LC"
+  rule "═" "$BLOOD"
   echo ""
-  echo -e "  ${DIM}Press Enter to return to the menu…${RST}"
+  echo -e "  ${GRAY}Press Enter to continue…${RST}"
   read -r
 }
 
-# ── Main loop ─────────────────────────────────────────────────
+# ── Menu ──────────────────────────────────────────────────────
+show_menu() {
+  show_banner
+
+  center "${BOLD}${CRIMSON}— SELECT A TOOL —${RST}"
+  echo ""
+  rule "─" "$BLOOD"
+  echo ""
+
+  local entries=(
+    "1" "Phone Deep"      "phone_deep.py"       "Carrier · breach · OSINT lookup"         "$LR"
+    "2" "Phone"           "phone2.py"           "Full OSINT + AI phone framework"          "$LR"
+    "3" "OSINT"           "osint2.py"           "Deep scan · social · breach · AI report"  "$CRIMSON"
+    "4" "IP Intel"        "ip_intel.py"         "Geo · ASN · VPN/Tor · ports · DDG"       "$ORANGE"
+    "5" "Geo"             "geo.py"              "Flask lure page + Cloudflare tunnel"      "$LY"
+    "6" "Phishing"        "phishing.py"         "Credential capture server"                "$LM"
+    "7" "Passwords"       "password_guesser.py" "Social-data wordlist builder"             "$LC"
+    "8" "VOID-AI"         "chatbot.py"          "OpenRouter AI red-team assistant"         "$LG"
+  )
+
+  local i=0
+  while [ $i -lt ${#entries[@]} ]; do
+    local num="${entries[$i]}"
+    local label="${entries[$((i+1))]}"
+    local file="${entries[$((i+2))]}"
+    local desc="${entries[$((i+3))]}"
+    local col="${entries[$((i+4))]}"
+    i=$(( i + 5 ))
+
+    local dot
+    if [ -f "$file" ]; then dot="${LG}●${RST}"; else dot="${R}○${RST}"; fi
+
+    printf "  ${BLOOD}[${RST}${BOLD}${LY}%s${RST}${BLOOD}]${RST}  %b  ${BOLD}%b%-20s${RST}  ${LGRAY}%s${RST}\n" \
+      "$num" "$dot" "$col" "$label" "$desc"
+    echo ""
+  done
+
+  rule "─" "$BLOOD"
+  echo ""
+  echo -e "  ${GRAY}[Q]  Quit${RST}"
+  echo ""
+  printf "  ${BLOOD}◈${RST}  ${LW}Choice: ${RST}"
+}
+
+# ── Launcher ──────────────────────────────────────────────────
+launch() {
+  local script="$1" label="$2" col="${3:-$LR}"
+  if [ ! -f "$script" ]; then
+    echo ""
+    echo -e "  ${ERR}  ${LW}${script}${RST} ${GRAY}not found in $(pwd)${RST}"
+    echo ""
+    sleep 2; return
+  fi
+
+  clear; echo ""
+  rule "═" "$BLOOD"
+  echo ""
+  center "${BLOOD}▶▶  ${col}${BOLD}${label}${RST}  ${BLOOD}◀◀${RST}"
+  echo ""
+  rule "═" "$BLOOD"
+  echo ""
+
+  python3 "$script"
+  local rc=$?
+
+  echo ""
+  rule "═" "$BLOOD"
+  if [ $rc -eq 0 ]; then
+    center "${LG}✔  ${label} exited cleanly${RST}"
+  else
+    center "${LR}✘  ${label} exited with code ${rc}${RST}"
+  fi
+  rule "═" "$BLOOD"
+  echo ""
+  echo -e "  ${GRAY}Press Enter to return to the menu…${RST}"
+  read -r
+}
+
+# ── Main ──────────────────────────────────────────────────────
 show_banner
 startup_checks
 
 while true; do
-  show_banner
   show_menu
-
-  printf "  ${LC}◈${RST}  Choice: "
   read -r choice
 
   case "$choice" in
-    1) launch "phone_deep.py"       "Phone Deep Scan"    ;;
-    2) launch "phone2.py"           "Phone Intelligence" ;;
-    3) launch "ip_intel.py"         "IP Intelligence"    ;;
-    4) launch "geo.py"              "GeoTracker"         ;;
-    5) launch "phishing.py"         "Phishing Kit"       ;;
-    6) launch "password_guesser.py" "Password Guesser"   ;;
-    7) launch "chatbot.py"          "VOID-AI Chatbot"    ;;
+    1) launch "phone_deep.py"       "Phone Deep" "$LR"     ;;
+    2) launch "phone2.py"           "Phone"      "$LR"     ;;
+    3) launch "osint2.py"           "OSINT"      "$CRIMSON";;
+    4) launch "ip_intel.py"         "IP Intel"   "$ORANGE" ;;
+    5) launch "geo.py"              "Geo"        "$LY"     ;;
+    6) launch "phishing.py"         "Phishing"   "$LM"     ;;
+    7) launch "password_guesser.py" "Passwords"  "$LC"     ;;
+    8) launch "chatbot.py"          "VOID-AI"    "$LG"     ;;
     q|Q|quit|exit)
+      clear; echo ""
+      rule "═" "$BLOOD"
       echo ""
-      center "${DIM}** Session ended **${RST}"
-      echo ""; exit 0 ;;
+      center "${BLOOD}██╗   ██╗ ██████╗ ██╗██████╗ ${RST}"
+      center "${BLOOD}██║   ██║██╔═══██╗██║██╔══██╗${RST}"
+      center "${BLOOD}██║   ██║██║   ██║██║██║  ██║${RST}"
+      center "${BLOOD}╚██╗ ██╔╝██║   ██║██║██║  ██║${RST}"
+      center "${BLOOD} ╚████╔╝ ╚██████╔╝██║██████╔╝${RST}"
+      center "${BLOOD}  ╚═══╝   ╚═════╝ ╚═╝╚═════╝ ${RST}"
+      echo ""
+      center "${GRAY}Session ended  •  @lfw.k4rma_${RST}"
+      echo ""
+      rule "═" "$BLOOD"
+      echo ""
+      exit 0
+      ;;
     *)
-      echo -e "\n  ${WARN}  Invalid choice — enter 1-7 or Q\n"
-      sleep 1 ;;
+      echo ""
+      echo -e "  ${WARN}  ${Y}Enter a number 1–7 or Q to quit${RST}"
+      sleep 1
+      ;;
   esac
 done
