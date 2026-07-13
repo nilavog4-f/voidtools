@@ -172,6 +172,7 @@ show_menu() {
     "7" "Passwords"       "password_guesser.py" "Social-data wordlist builder"             "$LC"      "<target name / dob / keywords>"
     "8" "VOID-AI"         "chatbot.py"          "OpenRouter AI red-team assistant"         "$LG"      "<chat prompt>"
     "9" "DDoS Sim"        "ddos_sim.py"         "Visual attack simulator — fake/demo"      "$BLOOD"   "<target ip address>"
+    "10" "Leak Scanner"   "git_leak_scanner.py" "Public repo secret exposure auditor"      "$LG"      "<github user / org / owner-repo>"
   )
 
   local i=0
@@ -252,6 +253,7 @@ while true; do
     7) launch "password_guesser.py" "Passwords"  "$LC"     ;;
     8) launch "chatbot.py"          "VOID-AI"    "$LG"     ;;
     9) launch "ddos_sim.py"         "DDoS Sim"   "$BLOOD"  ;;
+    10) launch "git_leak_scanner.py" "Leak Scanner" "$LG"  ;;
     q|Q|quit|exit)
       clear; echo ""
       rule "═" "$BLOOD"
@@ -271,7 +273,7 @@ while true; do
       ;;
     *)
       echo ""
-      echo -e "  ${WARN}  ${Y}Enter a number 1–7 or Q to quit${RST}"
+      echo -e "  ${WARN}  ${Y}Enter a number 1–10 or Q to quit${RST}"
       sleep 1
       ;;
   esac
