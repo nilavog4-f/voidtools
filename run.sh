@@ -188,7 +188,7 @@ show_menu() {
 
     printf "  ${BLOOD}[${RST}${BOLD}${LY}%s${RST}${BLOOD}]${RST}  %b  ${BOLD}%b%-12s${RST}  ${LGRAY}%s${RST}\n" \
       "$num" "$dot" "$col" "$label" "$desc"
-    printf "         ${GRAY}** %s${RST}\n" "$placeholder"
+    printf "         ${CRIMSON}**${RST}  ${LW}%s${RST}\n" "$placeholder"
     echo ""
   done
 
@@ -274,4 +274,3 @@ while true; do
       ;;
   esac
 done
-
