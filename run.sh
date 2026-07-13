@@ -163,14 +163,14 @@ show_menu() {
   echo ""
 
   local entries=(
-    "1" "Phone Deep"      "phone_deep.py"       "Carrier · breach · OSINT lookup"         "$LR"
-    "2" "Phone"           "phone2.py"           "Full OSINT + AI phone framework"          "$LR"
-    "3" "OSINT"           "osint2.py"           "Deep scan · social · breach · AI report"  "$CRIMSON"
-    "4" "IP Intel"        "ip_intel.py"         "Geo · ASN · VPN/Tor · ports · DDG"       "$ORANGE"
-    "5" "Geo"             "geo.py"              "Flask lure page + Cloudflare tunnel"      "$LY"
-    "6" "Phishing"        "phishing.py"         "Credential capture server"                "$LM"
-    "7" "Passwords"       "password_guesser.py" "Social-data wordlist builder"             "$LC"
-    "8" "VOID-AI"         "chatbot.py"          "OpenRouter AI red-team assistant"         "$LG"
+    "1" "Phone Deep"      "phone_deep.py"       "Carrier · breach · OSINT lookup"         "$LR"     "<+1 phone number>"
+    "2" "Phone"           "phone2.py"           "Full OSINT + AI phone framework"          "$LR"     "<+1 phone number>"
+    "3" "OSINT"           "osint2.py"           "Deep scan · social · breach · AI report"  "$CRIMSON" "<phone / username / email>"
+    "4" "IP Intel"        "ip_intel.py"         "Geo · ASN · VPN/Tor · ports · DDG"       "$ORANGE"  "<ip address or hostname>"
+    "5" "Geo"             "geo.py"              "Flask lure page + Cloudflare tunnel"      "$LY"     "<no input — starts server>"
+    "6" "Phishing"        "phishing.py"         "Credential capture server"                "$LM"     "<no input — starts server>"
+    "7" "Passwords"       "password_guesser.py" "Social-data wordlist builder"             "$LC"     "<target name / dob / keywords>"
+    "8" "VOID-AI"         "chatbot.py"          "OpenRouter AI red-team assistant"         "$LG"     "<chat prompt>"
   )
 
   local i=0
@@ -180,13 +180,15 @@ show_menu() {
     local file="${entries[$((i+2))]}"
     local desc="${entries[$((i+3))]}"
     local col="${entries[$((i+4))]}"
-    i=$(( i + 5 ))
+    local placeholder="${entries[$((i+5))]}"
+    i=$(( i + 6 ))
 
     local dot
     if [ -f "$file" ]; then dot="${LG}●${RST}"; else dot="${R}○${RST}"; fi
 
-    printf "  ${BLOOD}[${RST}${BOLD}${LY}%s${RST}${BLOOD}]${RST}  %b  ${BOLD}%b%-20s${RST}  ${LGRAY}%s${RST}\n" \
+    printf "  ${BLOOD}[${RST}${BOLD}${LY}%s${RST}${BLOOD}]${RST}  %b  ${BOLD}%b%-12s${RST}  ${LGRAY}%s${RST}\n" \
       "$num" "$dot" "$col" "$label" "$desc"
+    printf "         ${GRAY}** %s${RST}\n" "$placeholder"
     echo ""
   done
 
